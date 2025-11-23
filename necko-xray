@@ -1,0 +1,38 @@
+#!/bin/bash
+
+CONTAINER="necko-xray"
+
+STATUS_OUTPUT=$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>&1)
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    if [[ "$STATUS_OUTPUT" == *"permission denied"* ]]; then
+        echo "Error: Permission denied accessing Docker."
+        echo "Please run with sudo: sudo necko-xray" "$@"
+        exit 1
+    elif [[ "$STATUS_OUTPUT" == *"No such object"* ]]; then
+        echo "Error: Container '$CONTAINER' not found."
+        echo "Ensure the container is created: sudo docker compose up -d"
+        exit 1
+    else
+        echo "Docker Error:"
+        echo "$STATUS_OUTPUT"
+        exit 1
+    fi
+fi
+
+# 3. Check if the container exists but is stopped
+if [ "$STATUS_OUTPUT" != "true" ]; then
+    echo "Status: Container '$CONTAINER' is stopped or paused."
+    echo "Please start it first: sudo docker compose start $CONTAINER"
+    exit 1
+fi
+
+
+if [ -t 1 ]; then
+    TTY_FLAG="-t"
+else
+    TTY_FLAG=""
+fi
+
+docker exec -i $TTY_FLAG necko-xray xray "$@"

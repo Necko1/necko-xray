@@ -1,0 +1,55 @@
+services:
+  xray:
+    build:
+      context: .
+      args:
+        - XRAY_VERSION=v25.10.15
+    image: necko/xray
+    container_name: necko-xray
+    restart: always
+    network_mode: "host"
+    volumes:
+      - ./config/xray-core.json:/etc/xray/config.json
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "${XRAY_API_PORT}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:18-alpine3.22
+    container_name: necko-postgres
+    restart: always
+    env_file: .env
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - necko-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:9-alpine3.22
+    container_name: necko-valkey
+    restart: always
+    command: valkey-server --requirepass "${VALKEY_PASSWORD}"
+    volumes:
+      - valkey:/data
+    networks:
+      - necko-network
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "-a", "${VALKEY_PASSWORD}", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  necko-network:
+    driver: bridge
+
+volumes:
+  postgres:
+  valkey:

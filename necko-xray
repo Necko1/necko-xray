@@ -34,4 +34,4 @@ else
     TTY_FLAG=""
 fi
 
-docker exec -i $TTY_FLAG necko-xray xray "$@" # while there is no CLI, there will be a direct call to xray
+docker exec -i $TTY_FLAG necko-xray necko-xray "$@"

@@ -7,6 +7,7 @@ CONFIG_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/maste
 
 INSTALL_DIR="/opt/necko-xray"
 BIN_PATH="/usr/local/bin/necko-xray"
+CONTAINER="necko-xray"
 
 if [ "$EUID" -ne 0 ]; then
   echo "Error: Please run this script as root (sudo)."
@@ -40,6 +41,12 @@ echo "Starting necko-xray Installation"
 
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
+
+STATUS_OUTPUT=$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>&1)
+if [ "$STATUS_OUTPUT" = "true" ]; then
+  echo "Stopping existing container..."
+  docker compose down
+fi
 
 echo "Downloading configuration..."
 curl -sSL -o docker-compose.yml "$COMPOSE_URL"
@@ -79,4 +86,4 @@ curl -sSL -o "$BIN_PATH" "$WRAPPER_URL"
 chmod +x "$BIN_PATH"
 
 echo "Installation Complete."
-#echo "Run 'sudo necko-xray help' to get started."
+echo "Run 'sudo necko-xray help' to get started."

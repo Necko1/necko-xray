@@ -1,8 +1,10 @@
 use std::process::Stdio;
+use tokio::net::UnixListener;
 use tokio::process::Command;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::signal::unix::{signal, SignalKind};
 
-const SOCKET_PATH: &str = "/tmp/necko-xray.sock";
+pub const SOCKET_PATH: &str = "/tmp/necko-xray.sock";
 
 pub async fn start() -> anyhow::Result<()> {
     println!("[necko-xray]: Starting daemon...");
@@ -19,6 +21,12 @@ pub async fn start() -> anyhow::Result<()> {
     let pid = xray.id().unwrap();
     println!("[necko-xray]: Xray started with PID: {}", pid);
 
+    tokio::spawn(async move {
+        if let Err(e) = run_api_server().await {
+            eprintln!("[necko-xray]: API Server error: {}", e);
+        }
+    });
+
     let mut sigterm = signal(SignalKind::terminate())?;
     let mut sigint = signal(SignalKind::interrupt())?;
 
@@ -30,4 +38,33 @@ pub async fn start() -> anyhow::Result<()> {
 
     let _ = std::fs::remove_file(SOCKET_PATH);
     Ok(())
+}
+
+async fn run_api_server() -> anyhow::Result<()> {
+    let _ = std::fs::remove_file(SOCKET_PATH);
+
+    let listener = UnixListener::bind(SOCKET_PATH)?;
+    println!("[necko-xray]: API Server listening on {}", SOCKET_PATH);
+
+    loop {
+        let (mut stream, _) = listener.accept().await?;
+
+        tokio::spawn(async move {
+            let mut buf = vec![0u8; 1024];
+
+            if let Ok(n) = stream.read(&mut buf).await {
+                let cmd = String::from_utf8_lossy(&buf[..n]);
+                println!("[necko-xray]: Received command: {}", cmd);
+
+                // todo: replace the stub with a real grpc requests
+                let response = match cmd.trim() {
+                    "status" => "Xray is running. Users: 5, Traffic: 100GB",
+                    cmd if cmd.starts_with("add_user") => "User added successfully",
+                    _ => "Unknown command",
+                };
+
+                let _ = stream.write_all(response.as_bytes()).await;
+            }
+        });
+    }
 }

@@ -33,4 +33,4 @@ ENV XRAY_LOCATION_ASSET=/usr/local/share/xray/
 
 COPY --from=builder /app/target/release/necko-xray /usr/local/bin/necko-xray
 
-CMD ["/usr/local/bin/necko-xray"]
+CMD ["/usr/local/bin/necko-xray", "daemon"]

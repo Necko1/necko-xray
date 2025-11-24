@@ -1,4 +1,5 @@
 mod daemon;
+mod cli;
 
 use clap::{Parser, Subcommand};
 
@@ -37,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
             daemon::start().await?;
         }
         Some(Commands::Cli(cmd)) => {
-            // todo
+            cli::handle_command(cmd).await?;
         }
     }
 

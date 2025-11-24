@@ -3,8 +3,10 @@ WORKDIR /app
 
 RUN apk add --no-cache musl-dev
 
+COPY Cargo.toml build.rs ./
+COPY proto ./proto
+
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-COPY Cargo.toml .
 RUN cargo build --release
 
 COPY src ./src

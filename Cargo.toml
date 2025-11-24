@@ -9,6 +9,7 @@ description = "A lightweight CLI/TUI xray-core wrapper AKA. Control Panel, writt
 readme = "README.md"
 keywords = ["xray", "vpn", "proxy", "panel", "xtls"]
 repository = "https://github.com/Necko1/necko-xray"
+build = "build.rs"
 
 [profile.release]
 opt-level = 3

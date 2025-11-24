@@ -1,0 +1,6 @@
+services:
+  xray:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: necko1/xray:dev

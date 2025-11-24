@@ -1,4 +1,4 @@
-# ✋ necko8 AKA  necko-xray
+# ✋ necko8 AKA necko-xray
 
 ![Status: Alpha](https://img.shields.io/badge/Status-Deep%20Alpha-red?style=for-the-badge)
 [![Xray Core](https://img.shields.io/badge/Core-Xray-blue?style=for-the-badge)](https://xtls.github.io/en/)
@@ -123,8 +123,9 @@ Feel free to open an [Issue](https://github.com/Necko1/necko-xray/issues) to dis
 
 If you like where this project is going, give it a ⭐ Star on GitHub!
 
-**Current Version:** `v1.0.0`  
-**Docker Image:** [`necko1/xray:latest`](https://hub.docker.com/r/necko1/xray)
+- **Current Version:** `v1.0.1`  
+- **Docker Image:** [`necko1/xray:latest`](https://hub.docker.com/r/necko1/xray)
+- **Github repository:** [`Necko1/necko-xray`](https://github.com/Necko1/necko-xray)
 
 ---
 

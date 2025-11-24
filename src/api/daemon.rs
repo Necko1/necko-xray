@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::process::Stdio;
 use tokio::net::UnixListener;
 use tokio::process::Command;
@@ -56,12 +57,8 @@ async fn run_api_server() -> anyhow::Result<()> {
                 let cmd = String::from_utf8_lossy(&buf[..n]);
                 println!("[necko-xray]: Received command: {}", cmd);
 
-                // todo: replace the stub with a real grpc requests
-                let response = match cmd.trim() {
-                    "status" => "Xray is running. Users: 5, Traffic: 100GB",
-                    cmd if cmd.starts_with("add_user") => "User added successfully",
-                    _ => "Unknown command",
-                };
+                let response = crate::api::handle_command(cmd.deref()).await
+                    .unwrap_or_else(|e| e.to_string());
 
                 let _ = stream.write_all(response.as_bytes()).await;
             }

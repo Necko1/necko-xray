@@ -1,7 +1,8 @@
-mod daemon;
 mod cli;
+mod api;
 
 use clap::{Parser, Subcommand};
+use api::daemon;
 
 #[derive(Parser)]
 #[command(name = "necko-xray")]
@@ -24,9 +25,7 @@ enum Commands {
 #[derive(Subcommand)]
 enum CliCommands {
     /// Show status
-    Status,
-    /// Add user
-    AddUser { email: String },
+    Stats { email: String },
 }
 
 #[tokio::main]

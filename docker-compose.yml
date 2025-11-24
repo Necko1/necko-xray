@@ -4,6 +4,7 @@ services:
     container_name: necko-xray
     restart: always
     network_mode: "host"
+    env_file: .env
     volumes:
       - ./xray-core.json:/etc/xray/config.json
     healthcheck:

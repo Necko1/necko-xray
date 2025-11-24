@@ -43,7 +43,7 @@ The fastest way to get started. Runs on any Linux server that I know.
 
 #### Download and run the installer
 ```
-curl -sSL https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/scripts/install.sh | sudo bash
 ```
 
 ### Method 2: Manual Docker Compose
@@ -123,7 +123,7 @@ Feel free to open an [Issue](https://github.com/Necko1/necko-xray/issues) to dis
 
 If you like where this project is going, give it a ⭐ Star on GitHub!
 
-- **Current Version:** `v1.0.1`  
+- **Current Version:** `v1.0.2`  
 - **Docker Image:** [`necko1/xray:latest`](https://hub.docker.com/r/necko1/xray)
 - **Github repository:** [`Necko1/necko-xray`](https://github.com/Necko1/necko-xray)
 

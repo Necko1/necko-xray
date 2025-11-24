@@ -1,14 +1,13 @@
 use crate::CliCommands;
 use tokio::net::UnixStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use crate::daemon::SOCKET_PATH;
+use crate::api::daemon::SOCKET_PATH;
 
 pub async fn handle_command(cmd: CliCommands) -> anyhow::Result<()> {
     let mut stream = UnixStream::connect(SOCKET_PATH).await?;
 
     let request = match cmd {
-        CliCommands::Status => "status".to_string(),
-        CliCommands::AddUser { email } => format!("add_user {}", email),
+        CliCommands::Stats { email } => format!("stats {}", email)
     };
 
     stream.write_all(request.as_bytes()).await?;

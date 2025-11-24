@@ -1,10 +1,6 @@
 services:
   xray:
-    build:
-      context: .
-      args:
-        - XRAY_VERSION=v25.10.15
-    image: necko/xray
+    image: necko1/xray:latest
     container_name: necko-xray
     restart: always
     network_mode: "host"

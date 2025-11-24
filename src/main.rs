@@ -1,40 +1,43 @@
-use std::process::Stdio;
-use tokio::process::Command;
-use tokio::signal::unix::{signal, SignalKind};
+mod daemon;
+
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(name = "necko-xray")]
+#[command(about = "A lightweight CLI xray-core wrapper, written on rust")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Start the daemon (default mode)
+    Daemon,
+
+    /// CLI commands
+    #[command(subcommand)]
+    Cli(CliCommands),
+}
+
+#[derive(Subcommand)]
+enum CliCommands {
+    /// Show status
+    Status,
+    /// Add user
+    AddUser { email: String },
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("[necko-xray]: Starting Xray...");
+    let cli = Cli::parse();
 
-    let mut child = Command::new("/usr/local/bin/xray")
-        .arg("-config")
-        .arg("/etc/xray/config.json")
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .kill_on_drop(true)
-        .spawn()
-        .expect("Failed to start Xray process");
-
-    let pid = child.id().unwrap();
-    println!("[necko-xray]: Xray started with PID: {}", pid);
-
-    let mut sigterm = signal(SignalKind::terminate())?;
-    let mut sigint = signal(SignalKind::interrupt())?;
-
-    tokio::select! {
-        status = child.wait() => {
-            match status {
-                Ok(s) => println!("[necko-xray]: Xray exited unexpectedly with {}", s),
-                Err(e) => println!("[necko-xray]: Error waiting for Xray: {}", e),
-            }
+    match cli.command {
+        None | Some(Commands::Daemon) => {
+            daemon::start().await?;
         }
-
-        _ = sigterm.recv() => {
-            println!("[necko-xray]: Received SIGTERM. Shutting down...");
-        }
-
-        _ = sigint.recv() => {
-            println!("[necko-xray]: Received SIGINT (Ctrl+C). Shutting down...");
+        Some(Commands::Cli(cmd)) => {
+            // todo
         }
     }
 

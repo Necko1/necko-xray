@@ -6,5 +6,7 @@ license = "MIT"
 authors = ["necko1 <@everyonehio on Telegram>"]
 
 [dependencies]
-tokio = { version = "1", features = ["process", "rt", "macros", "signal", "rt-multi-thread"] }
+tokio = { version = "1", features = [
+    "process", "rt", "macros", "signal", "rt-multi-thread", "net"] }
 anyhow = "1"
+clap = { version = "4", features = ["derive"] }

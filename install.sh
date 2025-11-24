@@ -14,7 +14,9 @@ fi
 
 if ! command -v docker &> /dev/null; then
   echo "Error: Docker is not installed."
-  read -pr "Do you want to install it? [y/N] " response
+  printf "Do you want to install it? [y/N] "
+  read -r response < /dev/tty
+
   case $response in
     [Yy]* )
       echo "Installing Docker..."
@@ -30,6 +32,7 @@ if ! command -v docker &> /dev/null; then
       exit 1
       ;;
   esac
+
 fi
 
 echo "Starting Necko Panel Installation"

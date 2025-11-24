@@ -1,7 +1,7 @@
 FROM rust:alpine3.21 AS builder
 WORKDIR /app
 
-RUN apk add --no-cache musl-dev
+RUN apk add --no-cache musl-dev protoc protobuf-dev
 
 COPY Cargo.toml build.rs ./
 COPY proto ./proto

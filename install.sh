@@ -3,8 +3,9 @@ set -e
 
 COMPOSE_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/docker-compose.yml"
 WRAPPER_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/necko-xray"
+CONFIG_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/xray-core.json"
 
-INSTALL_DIR="/opt/necko"
+INSTALL_DIR="/opt/necko-xray"
 BIN_PATH="/usr/local/bin/necko-xray"
 
 if [ "$EUID" -ne 0 ]; then
@@ -35,13 +36,16 @@ if ! command -v docker &> /dev/null; then
 
 fi
 
-echo "Starting Necko Panel Installation"
+echo "Starting necko-xray Installation"
 
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
 echo "Downloading configuration..."
 curl -sSL -o docker-compose.yml "$COMPOSE_URL"
+
+echo "Downloading xray-core.json..."
+curl -sSL -o xray-core.json "$CONFIG_URL"
 
 if [ ! -f ".env" ]; then
   echo "Generating .env file from example..."
@@ -75,4 +79,4 @@ curl -sSL -o "$BIN_PATH" "$WRAPPER_URL"
 chmod +x "$BIN_PATH"
 
 echo "Installation Complete."
-echo "Run 'necko-xray help' to get started."
+#echo "Run 'sudo necko-xray help' to get started."

@@ -57,8 +57,8 @@ If you prefer full control:
 
 2.  **Get into the working directory:**
     ```
-    mkdir -p "/opt/necko"
-    cd "/opt/necko"
+    mkdir -p "/opt/necko-xray"
+    cd "/opt/necko-xray"
     ```
 
 3.  **Download `docker-compose.yml`:**
@@ -66,20 +66,25 @@ If you prefer full control:
     wget https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/docker-compose.yml
     ```
     
-4.  **Configure Environment:**
+4.  **Create the xray-core.json file:**
+    ```
+    wget https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/xray-core.json
+    ```
+
+5.  **Configure Environment:**
     Create a `.env` file (use `.env.example` as reference).
     ```
     curl -sSL -o .env "https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/.env.example"
     ```
     *Recommendation: **Use the `openssl rand -hex <n>` to generate STRONG passwords***
 
-5.  **Download CLI Wrapper:**
+6.  **Download CLI Wrapper:**
     ```
     wget -O /usr/local/bin/necko-xray https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/necko-xray
     chmod +x /usr/local/bin/necko-xray
     ```
 
-6.  **Start:**
+7.  **Start:**
     ```
     docker compose up -d
     ```

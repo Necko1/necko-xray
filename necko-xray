@@ -21,7 +21,6 @@ if [ $EXIT_CODE -ne 0 ]; then
     fi
 fi
 
-# 3. Check if the container exists but is stopped
 if [ "$STATUS_OUTPUT" != "true" ]; then
     echo "Status: Container '$CONTAINER' is stopped or paused."
     echo "Please start it first: sudo docker compose start $CONTAINER"
@@ -35,4 +34,4 @@ else
     TTY_FLAG=""
 fi
 
-docker exec -i $TTY_FLAG necko-xray xray "$@"
+docker exec -i $TTY_FLAG necko-xray xray "$@" # while there is no CLI, there will be a direct call to xray

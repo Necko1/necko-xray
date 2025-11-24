@@ -5,7 +5,7 @@ services:
     restart: always
     network_mode: "host"
     volumes:
-      - ./config/xray-core.json:/etc/xray/config.json
+      - ./xray-core.json:/etc/xray/config.json
     healthcheck:
       test: ["CMD", "nc", "-z", "127.0.0.1", "${XRAY_API_PORT}"]
       interval: 10s

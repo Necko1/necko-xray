@@ -34,10 +34,11 @@ jobs:
 
       - name: Stop services
         if: always()
-        run: docker compose \
-          -f docker-compose.yml \
-          -f docker-compose-dev.yml \
-          down -v
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose-dev.yml \
+            down -v
 
       - name: Login to Docker Hub
         if: github.event_name != 'pull_request'

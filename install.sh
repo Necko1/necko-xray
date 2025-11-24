@@ -69,8 +69,8 @@ if [ ! -f ".env" ]; then
     SED_OPTS=(-i)
   fi
 
-  sed "${SED_OPTS[@]}" "s/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=$PG_PASS/" .env
-  sed "${SED_OPTS[@]}" "s/^VALKEY_PASSWORD=$/VALKEY_PASSWORD=$VALKEY_PASS/" .env
+  sed "${SED_OPTS[@]}" "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$PG_PASS/" .env
+  sed "${SED_OPTS[@]}" "s/^VALKEY_PASSWORD=.*/VALKEY_PASSWORD=$VALKEY_PASS/" .env
 
   echo ".env file created successfully."
 else

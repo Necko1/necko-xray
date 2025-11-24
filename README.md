@@ -23,13 +23,13 @@ Things may break, configs may change, and features are being built as we speak.
 
 - [ ] **CLI Management** 
   - [ ] **Client adding/editing** 
-  - [ ] 
 - [ ] **TUI Dashboard**
 - [ ] **Subscription System** 
 - [ ] **Multi-Node Support**
 - [ ] **Real-time Statistics (nodes, users etc.)**
 - [ ] **Telegram Bot Integration**
 - [ ] **Per-IP Limitation**
+- [ ] **REST API for management**
 
 \* *This list **WILL** expand over time.*
 
@@ -57,8 +57,8 @@ If you prefer full control:
 
 2.  **Get into the working directory:**
     ```
-    mkdir -p "$INSTALL_DIR"
-    cd "$INSTALL_DIR"
+    mkdir -p "/opt/necko"
+    cd "/opt/necko"
     ```
 
 3.  **Download `docker-compose.yml`:**

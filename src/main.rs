@@ -4,6 +4,7 @@ mod config;
 
 use clap::{Parser, Subcommand};
 use api::daemon;
+use crate::api::Request;
 use crate::cli::CliCommands;
 
 #[derive(Parser)]
@@ -36,13 +37,18 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Some(Commands::Start) => {
+            if daemon::lock::is_daemon_running() {
+                let resp = daemon::send_request(Request::StartXray).await?;
+                println!("{resp}");
+                return Ok(());
+            }
+
             if let Err(e) = daemon::lock::acquire_lock() {
                 eprintln!("[necko-xray]: {}", e);
                 std::process::exit(1);
             }
 
             daemon::start().await?;
-            daemon::lock::release_lock();
         }
         Some(Commands::Stop) => {
             daemon::stop().await?;
@@ -51,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
             cli::handle_command(cmd).await?;
         }
         None | Some(Commands::Version) => {
-            println!("{}", env!("CARGO_PKG_VERSION"));
+            println!("v{}", env!("CARGO_PKG_VERSION"));
             println!("necko-xray help")
         }
     }

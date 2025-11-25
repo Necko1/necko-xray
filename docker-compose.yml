@@ -2,7 +2,7 @@ services:
   xray:
     image: necko1/xray:latest
     container_name: necko-xray
-    restart: always
+    restart: unless-stopped
     network_mode: "host"
     env_file: .env
     volumes:

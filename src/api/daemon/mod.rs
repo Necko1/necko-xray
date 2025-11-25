@@ -2,15 +2,25 @@ pub(crate) mod lock;
 
 use crate::api::Request;
 use bincode::config::standard;
-use bincode::serde::decode_from_slice;
+use bincode::serde::{decode_from_slice, encode_to_vec};
 use std::process::Stdio;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::UnixListener;
+use tokio::net::{UnixListener, UnixStream};
 use tokio::process::Command;
 use tokio::signal::unix::{signal, SignalKind};
 
 const PROFILE: &str = "example.json"; // todo change to sql query
 pub const SOCKET_PATH: &str = "/tmp/necko-xray.sock";
+const XRAY_PID_FILE: &str = "/tmp/necko-xray-core.pid";
+
+fn is_xray_running() -> bool {
+    if let Ok(pid_str) = std::fs::read_to_string(XRAY_PID_FILE) {
+        if let Ok(pid) = pid_str.trim().parse::<i32>() {
+            return lock::is_process_running(pid);
+        }
+    }
+    false
+}
 
 pub async fn start() -> anyhow::Result<()> {
     println!("[necko-xray]: Starting daemon...");
@@ -19,22 +29,14 @@ pub async fn start() -> anyhow::Result<()> {
     let _ = if std::path::Path::new(&profile_path).exists() {
         crate::config::generate_config_from_profile(Some(&profile_path))
     } else {
-        eprintln!("[necko-xray]: Cannot find {} profile ({})! Using empty profile",
-                  PROFILE, profile_path);
+        eprintln!(
+            "[necko-xray]: Cannot find {} profile ({})! Using empty profile",
+            PROFILE, profile_path
+        );
         crate::config::generate_config_from_profile(None)
     };
 
-    let mut xray = Command::new("/usr/local/bin/xray")
-        .arg("-config")
-        .arg("/etc/xray/config.json")
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .kill_on_drop(true)
-        .spawn()
-        .expect("Failed to start Xray process");
-
-    let pid = xray.id().unwrap();
-    println!("[necko-xray]: Xray started with PID: {}", pid);
+    start_xray().await?;
 
     tokio::spawn(async move {
         if let Err(e) = run_api_server().await {
@@ -46,38 +48,67 @@ pub async fn start() -> anyhow::Result<()> {
     let mut sigint = signal(SignalKind::interrupt())?;
 
     tokio::select! {
-        _ = xray.wait() => println!("[necko-xray]: Xray exited"),
-        _ = sigterm.recv() => println!("[necko-xray]: Received SIGTERM"),
-        _ = sigint.recv() => println!("[necko-xray]: Received SIGINT"),
+        _ = sigterm.recv() => println!("[necko-xray]: Received SIGTERM (shutting down daemon)"),
+        _ = sigint.recv() => println!("[necko-xray]: Received SIGINT (shutting down daemon)"),
     }
 
     cleanup();
     Ok(())
 }
 
+pub async fn start_xray() -> anyhow::Result<()> {
+    if is_xray_running() {
+        anyhow::bail!("Xray is already running");
+    }
+
+    let mut xray = Command::new("/usr/local/bin/xray")
+        .arg("-config")
+        .arg("/etc/xray/config.json")
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .kill_on_drop(true)
+        .spawn()
+        .expect("Failed to start Xray process");
+
+    let xray_pid = xray.id().unwrap();
+    println!("[necko-xray]: Xray started with PID: {}", xray_pid);
+
+    std::fs::write(XRAY_PID_FILE, xray_pid.to_string())?;
+
+    tokio::spawn(async move {
+        match xray.wait().await {
+            Ok(status) => println!("[necko-xray]: Xray exited with status: {}", status),
+            Err(e) => eprintln!("[necko-xray]: Failed to wait for Xray: {}", e),
+        }
+        let _ = std::fs::remove_file(XRAY_PID_FILE);
+    });
+
+    Ok(())
+}
+
 fn cleanup() {
     let _ = std::fs::remove_file(SOCKET_PATH);
+    let _ = std::fs::remove_file(XRAY_PID_FILE);
     lock::release_lock();
 }
 
 pub async fn stop() -> anyhow::Result<()> {
-    if let Some(pid) = lock::get_daemon_pid() {
-        println!("[necko-xray]: Stopping daemon (PID: {})...", pid);
+    let pid_str = std::fs::read_to_string(XRAY_PID_FILE)
+        .map_err(|_| anyhow::anyhow!("Xray daemon is not running"))?;
+    let pid: i32 = pid_str.trim().parse()?;
 
-        #[cfg(unix)]
-        {
-            use nix::sys::signal::{kill, Signal};
-            use nix::unistd::Pid;
+    println!("[necko-xray]: Stopping Xray (PID: {})...", pid);
 
-            kill(Pid::from_raw(pid), Signal::SIGTERM)?;
-            println!("[necko-xray]: Stop signal sent successfully");
-        }
+    #[cfg(unix)]
+    {
+        use nix::sys::signal::{kill, Signal};
+        use nix::unistd::Pid;
 
-        Ok(())
-    } else {
-        eprintln!("[necko-xray]: Daemon is not running");
-        std::process::exit(1);
+        kill(Pid::from_raw(pid), Signal::SIGTERM)?;
+        println!("[necko-xray]: Stop signal sent to Xray successfully");
     }
+
+    Ok(())
 }
 
 async fn run_api_server() -> anyhow::Result<()> {
@@ -111,4 +142,19 @@ async fn run_api_server() -> anyhow::Result<()> {
             let _ = stream.write_all(response.as_bytes()).await;
         });
     }
+}
+
+pub async fn send_request(request: Request) -> anyhow::Result<String> {
+    let mut stream = UnixStream::connect(SOCKET_PATH).await?;
+
+    let bytes = encode_to_vec(&request, standard())?;
+    let len = (bytes.len() as u32).to_be_bytes();
+    stream.write_all(&len).await?;
+    stream.write_all(&bytes).await?;
+    stream.flush().await?;
+
+    let mut response = String::new();
+    stream.read_to_string(&mut response).await?;
+
+    Ok(response)
 }

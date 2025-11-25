@@ -30,20 +30,33 @@ pub fn release_lock() {
     let _ = fs::remove_file(PID_FILE);
 }
 
-pub fn get_daemon_pid() -> Option<i32> {
-    let mut file = File::open(PID_FILE).ok()?;
-    let mut pid_str = String::new();
-    file.read_to_string(&mut pid_str).ok()?;
-    pid_str.trim().parse().ok()
+// pub fn get_daemon_pid() -> Option<i32> {
+//     let mut file = File::open(PID_FILE).ok()?;
+//     let mut pid_str = String::new();
+//     file.read_to_string(&mut pid_str).ok()?;
+//     pid_str.trim().parse().ok()
+// }
+
+pub fn is_daemon_running() -> bool {
+    if let Ok(mut file) = File::open(PID_FILE) {
+        let mut pid_str = String::new();
+        if file.read_to_string(&mut pid_str).is_ok() {
+            if let Ok(pid) = pid_str.trim().parse::<i32>() {
+                return is_process_running(pid);
+            }
+        }
+    }
+    false
 }
 
+
 #[cfg(target_os = "linux")]
-fn is_process_running(pid: i32) -> bool {
+pub(crate) fn is_process_running(pid: i32) -> bool {
     Path::new(&format!("/proc/{}", pid)).exists()
 }
 
 #[cfg(not(target_os = "linux"))]
-fn is_process_running(pid: i32) -> bool {
+pub(crate) fn is_process_running(pid: i32) -> bool {
     use nix::sys::signal::{kill, Signal};
     use nix::unistd::Pid;
 

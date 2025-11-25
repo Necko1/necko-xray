@@ -1,11 +1,6 @@
-use clap::Subcommand;
-use tokio::net::UnixStream;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use crate::api::daemon::SOCKET_PATH;
-use crate::api::Request;
+use crate::api::{daemon, Request};
 use crate::config::generate_config_from_profile;
-use bincode::serde::encode_to_vec;
-use bincode::config::standard;
+use clap::Subcommand;
 
 #[derive(Subcommand)]
 pub enum CliCommands {
@@ -53,8 +48,6 @@ pub enum UserStatsOnlineCommands {
 }
 
 pub async fn handle_command(cmd: CliCommands) -> anyhow::Result<()> {
-    let mut stream = UnixStream::connect(SOCKET_PATH).await?;
-
     let request: Request = match cmd {
         CliCommands::Profile { path } => {
             let _ = generate_config_from_profile(Some(&format!("profiles/{}", path)))?;
@@ -79,15 +72,8 @@ pub async fn handle_command(cmd: CliCommands) -> anyhow::Result<()> {
         },
     };
 
-    let bytes = encode_to_vec(&request, standard())?;
-    let len = (bytes.len() as u32).to_be_bytes();
-    stream.write_all(&len).await?;
-    stream.write_all(&bytes).await?;
-    stream.flush().await?;
-
-    let mut response = String::new();
-    stream.read_to_string(&mut response).await?;
-
+    let response = daemon::send_request(request).await?;
     println!("{}", response);
+    
     Ok(())
 }

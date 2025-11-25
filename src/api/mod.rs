@@ -6,6 +6,8 @@ pub mod daemon;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Request {
+    StartXray,
+    
     GetStatsUserOnlineCount { email: String },
     GetStatsUserOnlineIpList { email: String },
     GetStatsUserTraffic { email: String },
@@ -16,6 +18,11 @@ pub enum Request {
 
 pub async fn handle_command(request: Request) -> anyhow::Result<String> {
     match request {
+        Request::StartXray => {
+            daemon::start_xray().await?;
+            Ok("Xray started".into())
+        }
+        
         Request::GetStatsUserOnlineCount { email } =>
             get_stats_user_online_count(&email).await,
         Request::GetStatsUserOnlineIpList { email } =>

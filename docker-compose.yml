@@ -6,7 +6,7 @@ services:
     network_mode: "host"
     env_file: .env
     volumes:
-      - ./xray-core.json:/etc/xray/config.json
+      - ./profiles/:/etc/xray/profiles/:rw
     healthcheck:
       test: ["CMD", "nc", "-z", "127.0.0.1", "${XRAY_API_PORT}"]
       interval: 10s

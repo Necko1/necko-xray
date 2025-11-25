@@ -21,7 +21,8 @@ Things may break, configs may change, and features are being built as we speak.
 
 ## Goals
 
-- [ ] **CLI Management** 
+- [ ] **CLI Management**
+  - [ ] **Xray Config switcher**
   - [ ] **Client adding/editing** 
 - [ ] **TUI Dashboard**
 - [ ] **Subscription System** 
@@ -123,7 +124,7 @@ Feel free to open an [Issue](https://github.com/Necko1/necko-xray/issues) to dis
 
 If you like where this project is going, give it a ⭐ Star on GitHub!
 
-- **Current Version:** `v1.0.2`  
+- **Current Version:** `v1.0.3`  
 - **Docker Image:** [`necko1/xray:latest`](https://hub.docker.com/r/necko1/xray)
 - **Github repository:** [`Necko1/necko-xray`](https://github.com/Necko1/necko-xray)
 

@@ -63,7 +63,40 @@ pub mod app {
         tonic::include_proto!("xray.app.stats");
 
         pub mod command {
+            use serde::{Deserialize, Serialize};
+
             tonic::include_proto!("xray.app.stats.command");
+
+            #[derive(Serialize, Deserialize)]
+            pub struct SysStatsResponseSerializable {
+                pub num_goroutine: u32,
+                pub num_gc: u32,
+                pub alloc: u64,
+                pub total_alloc: u64,
+                pub sys: u64,
+                pub mallocs: u64,
+                pub frees: u64,
+                pub live_objects: u64,
+                pub pause_total_ns: u64,
+                pub uptime: u32,
+            }
+            
+            impl From<SysStatsResponse> for SysStatsResponseSerializable {
+                fn from(value: SysStatsResponse) -> Self {
+                    Self {
+                        num_goroutine: value.num_goroutine,
+                        num_gc: value.num_gc,
+                        alloc: value.alloc,
+                        total_alloc: value.total_alloc,
+                        sys: value.sys,
+                        mallocs: value.mallocs,
+                        frees: value.frees,
+                        live_objects: value.live_objects,
+                        pause_total_ns: value.pause_total_ns,
+                        uptime: value.uptime,
+                    }
+                }
+            }
         }
     }
 

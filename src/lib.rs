@@ -11,7 +11,7 @@ use xray_core::{
 };
 use std::env;
 use tonic::transport::{Channel, Endpoint};
-use crate::xray_core::app::stats::command::GetStatsRequest;
+use crate::xray_core::app::stats::command::{GetStatsRequest, SysStatsRequest, SysStatsResponse};
 
 pub mod xray_core;
 
@@ -67,15 +67,81 @@ impl Client {
     pub fn grpc(&self) -> GrpcServiceClient<Channel> {
         GrpcServiceClient::new(self.channel.clone())
     }
+}
 
+impl Client {
+    pub async fn user_online_ip_list(
+        &self,
+        email: &str,
+    ) -> anyhow::Result<HashMap<String, i64>> {
+        let mut client = self.stats();
+
+        let name = format!("user>>>{}>>>online", email);
+
+        let resp = client
+            .get_stats_online_ip_list(GetStatsRequest { name, reset: false })
+            .await?
+            .into_inner();
+
+        Ok(resp.ips)
+    }
+
+    pub async fn user_online_count(&self, email: &str) -> anyhow::Result<i64> {
+        let mut client = self.stats();
+
+        let name = format!("user>>>{}>>>online", email);
+
+        let val = client
+            .get_stats_online(GetStatsRequest { name, reset: false })
+            .await?
+            .into_inner()
+            .stat
+            .map(|s| s.value)
+            .unwrap_or(0);
+
+        Ok(val)
+    }
+
+    pub async fn system_stats(&self) -> anyhow::Result<SysStatsResponse> {
+        let mut client = self.stats();
+
+        let val = client
+            .get_sys_stats(SysStatsRequest {})
+            .await?
+            .into_inner();
+
+        Ok(val)
+    }
     pub async fn user_traffic(
         &self,
         email: &str,
     ) -> anyhow::Result<(i64, i64)> {
+        self.some_traffic("user", email).await
+    }
+
+    pub async fn inbound_traffic(
+        &self,
+        tag: &str
+    ) -> anyhow::Result<(i64, i64)> {
+        self.some_traffic("inbound", tag).await
+    }
+
+    pub async fn outbound_traffic(
+        &self,
+        tag: &str
+    ) -> anyhow::Result<(i64, i64)> {
+        self.some_traffic("outbound", tag).await
+    }
+
+    async fn some_traffic(
+        &self,
+        traffic_from: &str,
+        r#for: &str
+    ) -> anyhow::Result<(i64, i64)> {
         let mut client = self.stats();
 
-        let up_name = format!("user>>>{}>>>traffic>>>uplink", email);
-        let down_name = format!("user>>>{}>>>traffic>>>downlink", email);
+        let up_name = format!("{}>>>{}>>>traffic>>>uplink", traffic_from, r#for);
+        let down_name = format!("{}>>>{}>>>traffic>>>downlink", traffic_from, r#for);
 
         let up = client
             .get_stats(GetStatsRequest { name: up_name, reset: false })
@@ -94,21 +160,5 @@ impl Client {
             .unwrap_or(0);
 
         Ok((up, down))
-    }
-
-    pub async fn user_online_ip_list(
-        &self,
-        email: &str,
-    ) -> anyhow::Result<HashMap<String, i64>> {
-        let mut client = self.stats();
-
-        let name = format!("user>>>{}>>>online", email);
-
-        let resp = client
-            .get_stats_online_ip_list(GetStatsRequest { name, reset: false })
-            .await?
-            .into_inner();
-
-        Ok(resp.ips)
     }
 }

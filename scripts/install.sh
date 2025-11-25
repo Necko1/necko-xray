@@ -3,7 +3,7 @@ set -e
 
 COMPOSE_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/docker-compose.yml"
 WRAPPER_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/necko-xray"
-CONFIG_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/xray-core.json"
+EXAMPLE_CONFIG_URL="https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/profiles/example.json"
 
 INSTALL_DIR="/opt/necko-xray"
 BIN_PATH="/usr/local/bin/necko-xray"
@@ -51,8 +51,9 @@ fi
 echo "Downloading configuration..."
 curl -sSL -o docker-compose.yml "$COMPOSE_URL"
 
-echo "Downloading xray-core.json..."
-curl -sSL -o xray-core.json "$CONFIG_URL"
+echo "Downloading profiles/example.json..."
+mkdir -p profiles
+curl -sSL -o profiles/example.json "$EXAMPLE_CONFIG_URL"
 
 if [ ! -f ".env" ]; then
   echo "Generating .env file from example..."

@@ -67,9 +67,10 @@ If you prefer full control:
     wget https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/docker-compose.yml
     ```
     
-4.  **Create the xray-core.json file:**
+4.  **Create the `profiles` directory and create a profile file:**
     ```
-    wget https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/xray-core.json
+    mkdir -p profiles
+    curl -sSL -o profiles/example.json "https://raw.githubusercontent.com/Necko1/necko-xray/refs/heads/master/profiles/example.json"
     ```
 
 5.  **Configure Environment:**

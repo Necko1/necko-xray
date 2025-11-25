@@ -42,8 +42,7 @@ echo "Starting necko-xray Installation"
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-STATUS_OUTPUT=$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>&1)
-if [ "$STATUS_OUTPUT" = "true" ]; then
+if docker inspect -f '{{.State.Running}}' "$CONTAINER" >/dev/null 2>&1; then
   echo "Stopping existing container..."
   docker compose down
 fi

@@ -1,6 +1,10 @@
+use anyhow::bail;
+use crate::data::postgres::types::{CreateUser, IpLimitPunishment};
+use crate::proto::app::stats::command::SysStatsResponseSerializable;
+use crate::Client;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use necko_xray::Client;
-use necko_xray::proto::app::stats::command::SysStatsResponseSerializable;
+use sqlx::PgPool;
 
 pub mod daemon;
 
@@ -16,9 +20,24 @@ pub enum Request {
     GetStatsInboundTraffic { tag: String },
     GetStatsOutboundTraffic { tag: String },
     GetStatsSystem,
+
+    CreateUser {
+        email: String,
+        tags: Option<Vec<String>>,
+        inbounds: Option<Vec<String>>,
+        traffic_limit: i64,
+        reset_traffic_every: Option<i64>,
+        expire_at: Option<DateTime<Utc>>,
+        ip_limit: i64,
+        ip_limit_punishment: Option<IpLimitPunishment>,
+        ip_expire_after: i64,
+        is_active: bool,
+    },
+    DeleteUser { email: String },
+    GetAllUsers,
 }
 
-pub async fn handle_command(request: Request) -> anyhow::Result<String> {
+pub async fn handle_command(pool: PgPool, request: Request) -> anyhow::Result<String> {
     match request {
         Request::StartXray => {
             daemon::start_xray().await?;
@@ -46,6 +65,59 @@ pub async fn handle_command(request: Request) -> anyhow::Result<String> {
             get_stats_outbound_traffic(&tag).await,
         Request::GetStatsSystem =>
             get_stats_system().await,
+
+        Request::CreateUser { email, tags, inbounds,
+            traffic_limit, reset_traffic_every, expire_at,
+            ip_limit, ip_limit_punishment, ip_expire_after,
+            is_active
+        } => {
+            let ip_limit_punishment = ip_limit_punishment
+                .map(|ilp| sqlx::types::Json(ilp));
+
+            let data = CreateUser {
+                email,
+                tags,
+                inbounds,
+                traffic_limit,
+                reset_traffic_every,
+                expire_at,
+                ip_limit,
+                ip_limit_punishment,
+                ip_expire_after,
+                is_active,
+            };
+
+            let user = crate::data::postgres::create_user(&pool, data).await?;
+
+            create_user(user).await?;
+
+            Ok("User created".to_string())
+        }
+        Request::DeleteUser { email } => {
+            let user = crate::data::postgres::get_user_by_email(
+                &pool, &email).await?;
+
+            if user.is_none() {
+                bail!("User {} not found", email);
+            }
+
+            let user = user.unwrap();
+
+            let successful = crate::data::postgres::delete_user_by_id(
+                &pool, user.id).await?;
+
+            remove_user(user).await?;
+
+            Ok(successful.to_string())
+        }
+        Request::GetAllUsers => {
+            let users = crate::data::postgres::get_all_user_emails(
+                &pool).await?;
+
+            let formatted = serde_json::to_string_pretty(&users)?;
+
+            Ok(formatted)
+        }
     }
 }
 
@@ -106,4 +178,36 @@ async fn get_stats_system() -> anyhow::Result<String> {
         &SysStatsResponseSerializable::from(response))?;
 
     Ok(formatted)
+}
+
+async fn create_user(
+    user: crate::data::postgres::types::User
+) -> anyhow::Result<()> {
+    let client = Client::connect().await?;
+
+    let id = user.id.to_string();
+    let email = user.email;
+
+    // todo there is not only vless exists
+    let tags = user.inbounds.unwrap_or(vec![]);
+    for tag in tags {
+        client.add_vless_user(&tag, &id, &email).await?;
+    }
+
+    Ok(())
+}
+
+async fn remove_user(
+    user: crate::data::postgres::types::User
+) -> anyhow::Result<()> {
+    let client = Client::connect().await?;
+
+    let email = user.email;
+
+    let tags = user.inbounds.unwrap_or(vec![]);
+    for tag in tags {
+        client.remove_vless_user(&tag, &email).await?;
+    }
+
+    Ok(())
 }

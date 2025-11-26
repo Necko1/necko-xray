@@ -1,11 +1,7 @@
-mod xray;
-mod api;
-mod config;
-
 use clap::{Parser, Subcommand};
-use api::daemon;
-use crate::api::Request;
-use crate::xray::XrayCommands;
+use necko_xray::api::daemon;
+use necko_xray::api::Request;
+use necko_xray::core::CoreCommands;
 
 #[derive(Parser)]
 #[command(name = "necko-xray")]
@@ -29,9 +25,9 @@ enum Commands {
     /// Current version
     Version,
 
-    /// Xray gRPC API commands
+    /// Core (API) commands
     #[command(subcommand)]
-    Xray(XrayCommands),
+    Core(CoreCommands),
 }
 
 #[tokio::main]
@@ -66,8 +62,8 @@ async fn main() -> anyhow::Result<()> {
                 std::process::exit(1);
             }
         }
-        Some(Commands::Xray(cmd)) => {
-            xray::handle_command(cmd).await?;
+        Some(Commands::Core(cmd)) => {
+            necko_xray::core::handle_command(cmd).await?;
         }
         None | Some(Commands::Version) => {
             println!("v{}", env!("CARGO_PKG_VERSION"));

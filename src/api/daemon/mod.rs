@@ -1,9 +1,11 @@
-pub(crate) mod lock;
+pub mod lock;
 
+use std::env;
 use crate::api::Request;
 use bincode::config::standard;
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use std::process::Stdio;
+use sqlx::PgPool;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{UnixListener, UnixStream};
 use tokio::process::Command;
@@ -36,10 +38,24 @@ pub async fn start() -> anyhow::Result<()> {
         crate::config::generate_config_from_profile(None)
     };
 
+    // start xray
     start_xray().await?;
 
+    // get postgres pool
+    let db_url = env::var("DATABASE_URL")
+        .unwrap_or(format!("postgresql://{}:{}@localhost:5432/{}",
+                           env::var("POSTGRES_USER")
+                               .map_err(|_| anyhow::anyhow!("POSTGRES_USER is not set"))?,
+                           env::var("POSTGRES_PASSWORD")
+                               .map_err(|_| anyhow::anyhow!("POSTGRES_PASSWORD is not set"))?,
+                           env::var("POSTGRES_DB")
+                               .map_err(|_| anyhow::anyhow!("POSTGRES_DB is not set"))?));
+    let pool = crate::data::create_db_pool(&db_url).await?;
+    crate::data::postgres::init_database(&pool).await?;
+
+    // start api server
     tokio::spawn(async move {
-        if let Err(e) = run_api_server().await {
+        if let Err(e) = run_api_server(pool.clone()).await {
             eprintln!("[necko-xray]: API Server error: {}", e);
         }
     });
@@ -111,7 +127,7 @@ pub async fn stop() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn run_api_server() -> anyhow::Result<()> {
+async fn run_api_server(pool: PgPool) -> anyhow::Result<()> {
     let _ = std::fs::remove_file(SOCKET_PATH);
 
     let listener = UnixListener::bind(SOCKET_PATH)?;
@@ -120,6 +136,7 @@ async fn run_api_server() -> anyhow::Result<()> {
     loop {
         let (mut stream, _) = listener.accept().await?;
 
+        let pool = pool.clone();
         tokio::spawn(async move {
             let mut len_buf = [0u8; 4];
             if stream.read_exact(&mut len_buf).await.is_err() {
@@ -135,7 +152,7 @@ async fn run_api_server() -> anyhow::Result<()> {
             let result: anyhow::Result<String> = {
                 let (req, _read): (Request, usize) =
                     decode_from_slice(&buf, standard()).unwrap();
-                crate::api::handle_command(req).await
+                crate::api::handle_command(pool, req).await
             };
 
             let response = result.unwrap_or_else(|e| e.to_string());

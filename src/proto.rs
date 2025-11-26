@@ -119,7 +119,16 @@ pub mod common {
     }
 
     pub mod serial {
+        use prost::Message;
+        
         tonic::include_proto!("xray.common.serial");
+
+        pub fn to_typed_message<M: Message>(msg: &M, type_name: &str) -> TypedMessage {
+            TypedMessage {
+                r#type: type_name.to_string(),
+                value: msg.encode_to_vec(),
+            }
+        }
     }
 }
 

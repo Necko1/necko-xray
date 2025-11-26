@@ -69,8 +69,12 @@ if [ ! -f ".env" ]; then
     SED_OPTS=(-i)
   fi
 
-  sed "${SED_OPTS[@]}" "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$PG_PASS/" .env
-  sed "${SED_OPTS[@]}" "s/^VALKEY_PASSWORD=.*/VALKEY_PASSWORD=$VALKEY_PASS/" .env
+  sed "${SED_OPTS[@]}" \
+      -e "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$PG_PASS/" \
+      -e "s/^VALKEY_PASSWORD=.*/VALKEY_PASSWORD=$VALKEY_PASS/" \
+      -e "s|postgresql://postgres:change_this@|postgresql://postgres:$PG_PASS@|" \
+      -e "s|redis://:change_this@|redis://:$VALKEY_PASS@|" \
+      .env
 
   echo ".env file created successfully."
 else

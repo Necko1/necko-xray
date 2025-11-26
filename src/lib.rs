@@ -1,4 +1,8 @@
-use std::collections::HashMap;
+use crate::proto::app::proxyman::command::{AddUserOperation, AlterInboundRequest, RemoveUserOperation};
+use crate::proto::app::stats::command::{GetStatsRequest, SysStatsRequest, SysStatsResponse};
+use crate::proto::common::protocol::User;
+use crate::proto::common::serial;
+use crate::proto::proxy::vless::Account as VlessAccount;
 use proto::{
     app::{
         log::command::logger_service_client::LoggerServiceClient,
@@ -9,11 +13,16 @@ use proto::{
     core::observatory::command::observatory_service_client::ObservatoryServiceClient,
     transport::internet::grpc::grpc_service_client::GrpcServiceClient,
 };
+use std::collections::HashMap;
 use std::env;
 use tonic::transport::{Channel, Endpoint};
-use crate::proto::app::stats::command::{GetStatsRequest, SysStatsRequest, SysStatsResponse};
 
 pub mod proto;
+pub mod core;
+pub mod api;
+pub mod config;
+pub mod data;
+pub mod datetime;
 
 pub async fn connect() -> anyhow::Result<Channel> {
     let channel = Endpoint::try_from(
@@ -160,5 +169,63 @@ impl Client {
             .unwrap_or(0);
 
         Ok((up, down))
+    }
+}
+
+impl Client {
+    pub async fn add_vless_user(
+        &self,
+        inbound_tag: &str,
+        id: &str,
+        email: &str
+    ) -> anyhow::Result<()> {
+        let mut client = self.handler();
+
+        let account = VlessAccount {
+            id: id.to_string(),
+            flow: "".to_string(),
+            encryption: "none".to_string(),
+            ..Default::default()
+        };
+
+        let inbound_user = User {
+            level: 0,
+            email: email.to_string(),
+            account: Some(serial::to_typed_message(&account, "xray.proxy.vless.Account")),
+        };
+
+        let op = AddUserOperation { user: Some(inbound_user) };
+
+        let req = AlterInboundRequest {
+            tag: inbound_tag.to_string(),
+            operation: Some(serial::to_typed_message(
+                &op,
+                "xray.proxyman.command.AddUserOperation"
+            )),
+        };
+
+        let _ = client.alter_inbound(req).await?;
+        Ok(())
+    }
+
+    pub async fn remove_vless_user(
+        &self,
+        inbound_tag: &str,
+        email: &str
+    ) -> anyhow::Result<()> {
+        let mut client = self.handler();
+
+        let op = RemoveUserOperation { email: email.to_string() };
+
+        let req = AlterInboundRequest {
+            tag: inbound_tag.to_string(),
+            operation: Some(serial::to_typed_message(
+                &op,
+                "xray.proxyman.command.RemoveUserOperation"
+            )),
+        };
+
+        let _ = client.alter_inbound(req).await?;
+        Ok(())
     }
 }

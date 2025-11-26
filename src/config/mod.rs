@@ -45,9 +45,6 @@ lazy_static!(
                 "listen": "127.0.0.1",
                 "port": env::var("XRAY_API_PORT")
                     .map_err(|_| anyhow::anyhow!("XRAY_API_PORT not found"))
-                    .unwrap()
-                    .parse::<u16>()
-                    .map_err(|_| anyhow::anyhow!("XRAY_API_PORT is not a valid port number"))
                     .unwrap(),
                 "protocol": "dokodemo-door",
                 "settings": {
@@ -94,7 +91,20 @@ pub fn get_config_from_profile(
     profile.merge(&STATS.clone());
     profile.merge(&POLICY.clone());
     profile.merge(&INBOUNDS.clone());
-    profile.merge(&ROUTING.clone());
+
+    let profile_routing = profile
+        .get("routing")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+
+    if let Some(base_routing) = ROUTING.get("routing").cloned() { // always true but it's better to double-check
+        profile
+            .as_object_mut()
+            .unwrap()
+            .insert("routing".to_string(), base_routing);
+    }
+
+    profile.merge(&json!({ "routing": profile_routing }));
 
     Ok(profile)
 }

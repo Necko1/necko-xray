@@ -7,6 +7,11 @@ services:
     env_file: .env
     volumes:
       - ./profiles/:/etc/xray/profiles/:rw
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
 
   postgres:
     image: postgres:18-alpine3.22

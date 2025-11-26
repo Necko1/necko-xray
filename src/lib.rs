@@ -13,7 +13,7 @@ use proto::{
     core::observatory::command::observatory_service_client::ObservatoryServiceClient,
     transport::internet::grpc::grpc_service_client::GrpcServiceClient,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use tonic::transport::{Channel, Endpoint};
 
@@ -226,6 +226,27 @@ impl Client {
         };
 
         let _ = client.alter_inbound(req).await?;
+        Ok(())
+    }
+
+    pub async fn sync_user_inbounds(
+        &self,
+        email: &str,
+        id: &str,
+        old_inbounds: Vec<String>,
+        new_inbounds: Vec<String>,
+    ) -> anyhow::Result<()> {
+        let old: HashSet<_> = old_inbounds.into_iter().collect();
+        let new: HashSet<_> = new_inbounds.into_iter().collect();
+
+        for tag in old.difference(&new) {
+            let _ = self.remove_vless_user(tag, email).await;
+        }
+
+        for tag in new.difference(&old) {
+            self.add_vless_user(tag, id, email).await?;
+        }
+
         Ok(())
     }
 }

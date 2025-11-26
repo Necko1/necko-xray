@@ -8,7 +8,7 @@ use sqlx::PgPool;
 
 pub mod daemon;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Request {
     StartXray,
     StopXray,
@@ -33,11 +33,24 @@ pub enum Request {
         ip_expire_after: i64,
         is_active: bool,
     },
+    UpdateUser {
+        email: String,
+        tags: Option<Vec<String>>,
+        inbounds: Option<Vec<String>>,
+        traffic_limit: Option<i64>,
+        reset_traffic_every: Option<i64>,
+        expire_at: Option<DateTime<Utc>>,
+        ip_limit: Option<i64>,
+        ip_limit_punishment: Option<IpLimitPunishment>,
+        ip_expire_after: Option<i64>,
+        is_active: Option<bool>,
+    },
     DeleteUser { email: String },
     GetAllUsers,
 }
 
 pub async fn handle_command(pool: PgPool, request: Request) -> anyhow::Result<String> {
+    let req = request.clone();
     match request {
         Request::StartXray => {
             daemon::start_xray().await?;
@@ -92,6 +105,24 @@ pub async fn handle_command(pool: PgPool, request: Request) -> anyhow::Result<St
             create_user(user).await?;
 
             Ok("User created".to_string())
+        }
+        Request::UpdateUser { email, ..} => {
+            let user = crate::data::postgres::get_user_by_email(
+                &pool, &email).await?.unwrap();
+
+            let old_inbounds = user.inbounds.unwrap_or(vec![]);
+
+            let user = crate::data::postgres::update_user(
+                &pool, req).await?;
+
+            let client = Client::connect().await?;
+
+            client.sync_user_inbounds(&user.email,
+                                      &user.id.to_string(),
+                                      old_inbounds,
+                                      user.inbounds.unwrap_or(vec![])).await?;
+
+            Ok("User updated".to_string())
         }
         Request::DeleteUser { email } => {
             let user = crate::data::postgres::get_user_by_email(

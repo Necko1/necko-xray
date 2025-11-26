@@ -8,6 +8,7 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 pub enum IpLimitPunishment {
+    Nothing,
     SuspendUser { time: i64 },
     BanLastIp { time: i64 },
 }

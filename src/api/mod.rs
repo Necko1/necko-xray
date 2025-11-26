@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use necko_xray::Client;
-use necko_xray::xray_core::app::stats::command::SysStatsResponseSerializable;
+use necko_xray::proto::app::stats::command::SysStatsResponseSerializable;
 
 pub mod daemon;
 

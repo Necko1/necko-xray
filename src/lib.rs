@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use xray_core::{
+use proto::{
     app::{
         log::command::logger_service_client::LoggerServiceClient,
         proxyman::command::handler_service_client::HandlerServiceClient,
@@ -11,9 +11,9 @@ use xray_core::{
 };
 use std::env;
 use tonic::transport::{Channel, Endpoint};
-use crate::xray_core::app::stats::command::{GetStatsRequest, SysStatsRequest, SysStatsResponse};
+use crate::proto::app::stats::command::{GetStatsRequest, SysStatsRequest, SysStatsResponse};
 
-pub mod xray_core;
+pub mod proto;
 
 pub async fn connect() -> anyhow::Result<Channel> {
     let channel = Endpoint::try_from(

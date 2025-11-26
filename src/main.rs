@@ -1,11 +1,11 @@
-mod cli;
+mod xray;
 mod api;
 mod config;
 
 use clap::{Parser, Subcommand};
 use api::daemon;
 use crate::api::Request;
-use crate::cli::CliCommands;
+use crate::xray::XrayCommands;
 
 #[derive(Parser)]
 #[command(name = "necko-xray")]
@@ -29,9 +29,9 @@ enum Commands {
     /// Current version
     Version,
 
-    /// CLI commands
+    /// Xray gRPC API commands
     #[command(subcommand)]
-    Cli(CliCommands),
+    Xray(XrayCommands),
 }
 
 #[tokio::main]
@@ -66,8 +66,8 @@ async fn main() -> anyhow::Result<()> {
                 std::process::exit(1);
             }
         }
-        Some(Commands::Cli(cmd)) => {
-            cli::handle_command(cmd).await?;
+        Some(Commands::Xray(cmd)) => {
+            xray::handle_command(cmd).await?;
         }
         None | Some(Commands::Version) => {
             println!("v{}", env!("CARGO_PKG_VERSION"));

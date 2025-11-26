@@ -3,7 +3,7 @@ use crate::config::generate_config_from_profile;
 use clap::Subcommand;
 
 #[derive(Subcommand)]
-pub enum CliCommands {
+pub enum XrayCommands {
     /// Choose profile
     Profile { path: String },
 
@@ -47,13 +47,13 @@ pub enum UserStatsOnlineCommands {
     List { email: String },
 }
 
-pub async fn handle_command(cmd: CliCommands) -> anyhow::Result<()> {
+pub async fn handle_command(cmd: XrayCommands) -> anyhow::Result<()> {
     let request: Request = match cmd {
-        CliCommands::Profile { path } => {
-            let _ = generate_config_from_profile(Some(&format!("profiles/{}", path)))?;
+        XrayCommands::Profile { path } => {
+            let _ = generate_config_from_profile(Some(&format!("/etc/xray/profiles/{}", path)))?;
             return Ok(())
         },
-        CliCommands::Stats(stats_cmd) => match stats_cmd {
+        XrayCommands::Stats(stats_cmd) => match stats_cmd {
             StatsCommands::User(user_cmd) => match user_cmd {
                 UserStatsCommands::Online(online_cmd) => match online_cmd {
                     UserStatsOnlineCommands::Count { email } =>

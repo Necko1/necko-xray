@@ -22,7 +22,7 @@ Things may break, configs may change, and features are being built as we speak.
 ## Goals
 
 - [ ] **CLI Management**
-  - [ ] **Xray Config switcher**
+  - [x] **Xray Config switcher**
   - [ ] **Client adding/editing** 
 - [ ] **TUI Dashboard**
 - [ ] **Subscription System** 

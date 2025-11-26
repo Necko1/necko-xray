@@ -23,6 +23,9 @@ enum Commands {
     /// Stop the daemon
     Stop,
 
+    /// Restart the daemon
+    Restart,
+
     /// Current version
     Version,
 
@@ -39,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
         Some(Commands::Start) => {
             if daemon::lock::is_daemon_running() {
                 let resp = daemon::send_request(Request::StartXray).await?;
-                println!("{resp}");
+                println!("[necko-xray]: {}", resp);
                 return Ok(());
             }
 
@@ -51,7 +54,17 @@ async fn main() -> anyhow::Result<()> {
             daemon::start().await?;
         }
         Some(Commands::Stop) => {
-            daemon::stop().await?;
+            let resp = daemon::send_request(Request::StopXray).await?;
+            println!("[necko-xray]: {}", resp);
+        }
+        Some(Commands::Restart) => {
+            if daemon::lock::is_daemon_running() {
+                let resp = daemon::send_request(Request::RestartXray).await?;
+                println!("[necko-xray]: {}", resp);
+            } else {
+                eprintln!("[necko-xray]: Daemon is not running");
+                std::process::exit(1);
+            }
         }
         Some(Commands::Cli(cmd)) => {
             cli::handle_command(cmd).await?;

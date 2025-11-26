@@ -45,6 +45,9 @@ lazy_static!(
                 "listen": "127.0.0.1",
                 "port": env::var("XRAY_API_PORT")
                     .map_err(|_| anyhow::anyhow!("XRAY_API_PORT not found"))
+                    .unwrap()
+                    .parse::<u16>()
+                    .map_err(|_| anyhow::anyhow!("XRAY_API_PORT is not a valid port number"))
                     .unwrap(),
                 "protocol": "dokodemo-door",
                 "settings": {

@@ -62,6 +62,18 @@ pub async fn handle_command(pool: PgPool, request: Request) -> anyhow::Result<St
         }
         Request::RestartXray => {
             daemon::stop().await?;
+
+            for _ in 0..50 {
+                if !daemon::is_xray_running() {
+                    break;
+                }
+                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+            }
+
+            if daemon::is_xray_running() {
+                bail!("Failed to stop Xray process");
+            }
+
             daemon::start_xray().await?;
             Ok("Xray restarted".into())
         }

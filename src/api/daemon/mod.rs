@@ -15,7 +15,7 @@ const PROFILE: &str = "example.json"; // todo change to sql query
 pub const SOCKET_PATH: &str = "/tmp/necko-xray.sock";
 const XRAY_PID_FILE: &str = "/tmp/necko-xray-core.pid";
 
-fn is_xray_running() -> bool {
+pub fn is_xray_running() -> bool {
     if let Ok(pid_str) = std::fs::read_to_string(XRAY_PID_FILE) {
         if let Ok(pid) = pid_str.trim().parse::<i32>() {
             return lock::is_process_running(pid);

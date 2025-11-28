@@ -191,7 +191,7 @@ impl Client {
         let inbound_user = User {
             level: 0,
             email: email.to_string(),
-            account: Some(serial::to_typed_message(&account, "xray.proxy.vless.Account")),
+            account: Some(serial::to_typed_message(&account, "proxy.vless.Account")),
         };
 
         let op = AddUserOperation { user: Some(inbound_user) };
@@ -200,7 +200,7 @@ impl Client {
             tag: inbound_tag.to_string(),
             operation: Some(serial::to_typed_message(
                 &op,
-                "xray.proxyman.command.AddUserOperation"
+                "proxyman.command.AddUserOperation"
             )),
         };
 
